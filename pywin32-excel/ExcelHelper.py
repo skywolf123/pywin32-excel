@@ -7,7 +7,6 @@
 """
 
 import win32com.client
-import logging
 
 
 class ExcelHelper:
@@ -32,17 +31,6 @@ class ExcelHelper:
 
     def close(self):
         num_of_workbooks = self.excel.Workbooks.Count
-        if num_of_workbooks > 0:
-            logging.debug(
-                'there are still %d workbooks opened in excel process, '
-                'not quit excel application',
-                num_of_workbooks
-            )
-        else:
-            logging.debug(
-                'no workbook opened in excel process, quiting excel '
-                'application instance ...'
-            )
         self.workbook.Close(SaveChanges=0)
         self.excel.Quit()
         del self.excel
