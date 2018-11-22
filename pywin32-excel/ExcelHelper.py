@@ -90,6 +90,20 @@ class ExcelHelper:
         cell2 = self.convert_address_to_cell(cells[1])
         return self.worksheet.Range(cell1, cell2)
 
+    def convert_cell_index(self, cell_index):
+        if isinstance(cell_index, tuple):
+            return self.worksheet.Cells(cell_index)
+        else:
+            return self.convert_address_to_cell(cell_index)
+
+    def convert_range_index(self, range_index):
+        if isinstance(range_index, tuple):
+            cell1 = self.worksheet.Cells(range_index[0], range_index[1])
+            cell2 = self.worksheet.Cells(range_index[2], range_index[3])
+            return self.worksheet.Range(cell1, cell2)
+        else:
+            return self.convert_address_to_range(range_index)
+
     def set_worksheet(self, sheet):
         self.worksheet = self.workbook.Worksheets(sheet)
 
@@ -100,10 +114,7 @@ class ExcelHelper:
         e.g. (1, 2) or 'A2'
         :return:
         """
-        if isinstance(cell_index, tuple):
-            return self.worksheet.Cells(cell_index).Value
-        else:
-            return self.convert_address_to_cell(cell_index).Value
+        return self.convert_cell_index(cell_index).Value
 
     def get_cell_text(self, cell_index):
         return self.worksheet.Cells(cell_index).Text
@@ -116,17 +127,11 @@ class ExcelHelper:
         :param value:
         :return:
         """
-        if isinstance(cell_index, tuple):
-            self.worksheet.Cells(cell_index).Value = value
-        else:
-            self.convert_address_to_cell(cell_index).Value = value
+        self.convert_cell_index(cell_index).Value = value
 
     def set_cell_font(self, cell_index,
                       style='Regular', name='Arial', size=9, color_index=1):
-        if isinstance(cell_index, tuple):
-            cell = self.workbook.Cells(cell_index)
-        else:
-            cell = self.convert_address_to_cell(cell_index)
+        cell = self.convert_cell_index(cell_index).Value
 
         cell.Font.Size = size
         cell.ColorIndex = color_index
@@ -149,44 +154,49 @@ class ExcelHelper:
         e.g. (1,2,10,12) or 'A1:C3'
         :return:
         """
-        if isinstance(range_index, tuple):
-            cell1 = self.worksheet.Cells(range_index[0], range_index[1])
-            cell2 = self.worksheet.Cells(range_index[2], range_index[3])
-            return self.worksheet.Range(cell1, cell2).Value
-        else:
-            return self.convert_address_to_range(range_index).Value
+        return self.convert_range_index(range_index).Value
 
     def set_range(self, top_cell_index, data):
         if isinstance(top_cell_index, tuple):
-            row = top_cell_index[0]
-            col = top_cell_index[1]
+            row1 = top_cell_index[0]
+            col1 = top_cell_index[1]
         else:
-            row, col = self.convert_address_to_num(top_cell_index)
-        cell1 = self.worksheet.Cells(row, col)
-        cell2 = self.worksheet.Cells(row + len(data) - 1,
-                                     col + len(data[0]) - 1)
-        self.worksheet.Range(cell1, cell2).Value = data
+            row1, col1 = self.convert_address_to_num(top_cell_index)
+        row2 = row1 + len(data) - 1
+        col2 = col1 + len(data[0]) - 1
+        self.convert_range_index((row1, col1, row2, col2)).Value = data
 
     def clear_range(self, range_index, clear_contents=True, clear_formats=True):
-        if isinstance(range_index, tuple):
-            cell1 = self.worksheet.Cells(range_index[0], range_index[1])
-            cell2 = self.worksheet.Cells(range_index[2], range_index[3])
-            range = self.worksheet.Range(cell1, cell2)
-        else:
-            range = self.convert_address_to_range(range_index)
         if clear_contents:
-            range.ClearContents()
+            self.convert_range_index(range_index).ClearContents()
         if clear_formats:
-            range.ClearFormats()
+            self.convert_range_index(range_index).ClearFormats()
 
     def del_range(self, range_index):
-        if isinstance(range_index, tuple):
-            cell1 = self.worksheet.Cells(range_index[0], range_index[1])
-            cell2 = self.worksheet.Cells(range_index[2], range_index[3])
-            range = self.worksheet.Range(cell1, cell2).Delete
+        self.convert_range_index(range_index).Delete()
+
+    def copy_and_paste(self, source, destination):
+        source_sheet = self.workbook.Worksheets(source[0])
+        destination_sheet = self.workbook.Worksheets(destination[0])
+        temp_sheet = self.worksheet.Name
+        self.worksheet = destination_sheet
+        destination_range = self.convert_range_index(destination[1])
+        self.worksheet = source_sheet
+        self.convert_range_index(source[1]).Copy(destination_range)
+        self.set_worksheet(temp_sheet)
+
+    def add_sheet(self, old_sheet, new_sheet, after=True):
+        sheet = self.workbook.Worksheets(old_sheet)
+        if after:
+            self.workbook.Worksheets.Add(None, sheet).Name = new_sheet
         else:
-            range = self.convert_address_to_range(range_index).Delete
-        range.Delete()
+            self.workbook.Worksheets.Add(sheet).Name = new_sheet
+
+    def del_sheet(self, sheet):
+        self.excel.DisplayAlerts = False
+        worksheet = self.workbook.Worksheets(sheet)
+        worksheet.Activate()
+        self.excel.ActivateSheet.Delete()
 
     def add_picture(self, picture_name, left, top, width, height):
         self.worksheet.Shapes.AddPicture(picture_name, 1, 1, left, top, width,
