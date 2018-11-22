@@ -156,21 +156,37 @@ class ExcelHelper:
         else:
             return self.convert_address_to_range(range_index).Value
 
-    def set_range(self, cell_index, data):
-        if isinstance(cell_index, tuple):
-            row = cell_index[0]
-            col = cell_index[1]
+    def set_range(self, top_cell_index, data):
+        if isinstance(top_cell_index, tuple):
+            row = top_cell_index[0]
+            col = top_cell_index[1]
         else:
-            row, col = self.convert_address_to_num(cell_index)
+            row, col = self.convert_address_to_num(top_cell_index)
         cell1 = self.worksheet.Cells(row, col)
         cell2 = self.worksheet.Cells(row + len(data) - 1,
                                      col + len(data[0]) - 1)
         self.worksheet.Range(cell1, cell2).Value = data
 
-    def del_range(self, row1, col1, row2, col2):
-        cell1 = self.worksheet.Cells(row1, col1)
-        cell2 = self.worksheet.Cells(row2, col2)
-        return self.worksheet.Range(cell1, cell2).Delete
+    def clear_range(self, range_index, clear_contents=True, clear_formats=True):
+        if isinstance(range_index, tuple):
+            cell1 = self.worksheet.Cells(range_index[0], range_index[1])
+            cell2 = self.worksheet.Cells(range_index[2], range_index[3])
+            range = self.worksheet.Range(cell1, cell2)
+        else:
+            range = self.convert_address_to_range(range_index)
+        if clear_contents:
+            range.ClearContents()
+        if clear_formats:
+            range.ClearFormats()
+
+    def del_range(self, range_index):
+        if isinstance(range_index, tuple):
+            cell1 = self.worksheet.Cells(range_index[0], range_index[1])
+            cell2 = self.worksheet.Cells(range_index[2], range_index[3])
+            range = self.worksheet.Range(cell1, cell2).Delete
+        else:
+            range = self.convert_address_to_range(range_index).Delete
+        range.Delete()
 
     def add_picture(self, picture_name, left, top, width, height):
         self.worksheet.Shapes.AddPicture(picture_name, 1, 1, left, top, width,
