@@ -200,7 +200,7 @@ class ExcelHelper:
         source_range.Copy(dest_range)
 
     # sheet methods
-    def add_sheet(self, old_sheet, new_sheet, after=True):
+    def add_sheet(self, new_sheet, old_sheet=None, after=True):
         sheet = self.convert_name_to_sheet(old_sheet)
         if after:
             self.workbook.Worksheets.Add(None, sheet).Name = new_sheet
@@ -213,7 +213,96 @@ class ExcelHelper:
         sheet.Activate()
         self.excel.ActivateSheet.Delete()
 
-    #
+    # other items methods
+    def add_chart(self, left, top, width=240, height=160, sheet_name=None):
+        sheet = self.convert_name_to_sheet(sheet_name)
+        return sheet.ChartObjects().Add(left, top, width, height)
+
+    def chart_plot(self, data_ranges, chart_object, chart_type,
+                   plot_by=None, category_labels=1, series_labels=0,
+                   has_legend=None, title=None, category_title=None,
+                   value_title=None, extra_title=None, sheet_name=None):
+        sheet = self.convert_name_to_sheet(sheet_name)
+        top_row, left_col, bottom_row, right_col = data_ranges[0]
+        source = sheet.Range(sheet.Cells(top_row, left_col),
+                             sheet.Cells(bottom_row, right_col))
+        if len(data_ranges) > 1:
+            for count in range(len(data_ranges[1:])):
+                top_row, left_col, bottom_row, right_col = data_ranges[
+                    count + 1]
+                temp_source = sheet.Range(sheet.Cells(top_row, left_col),
+                                          sheet.Cells(bottom_row, right_col))
+                source = self.excel.Union(source, temp_source)
+        plot_type = {'Area': 1,
+                     'Bar': 2,
+                     'Column': 3,
+                     'Line': 4,
+                     'Pie': 5,
+                     'Radar': -4151,
+                     'Scatter': -4169,
+                     'XYScatter': 72,  # Smooth
+                     'XYScatterLines': 74,
+                     'Combination': -4111,
+                     '3DArea': -4098,
+                     '3DBar': -4099,
+                     '3DColumn': -4100,
+                     '3DPie': -4101,
+                     '3DSurface': -4103,
+                     'Doughnut': -4120,
+                     'Bubble': 15,
+                     'Surface': 83,
+                     'Cone': 3,
+                     '3DAreaStacked': 78,
+                     '3DColumnStacked': 55}
+        gallery = plot_type[chart_type]
+        chart_object.Chart.ChartWizard(source, gallery, format, plot_by,
+                                       category_labels, series_labels,
+                                       has_legend, title, category_title,
+                                       value_title, extra_title)
+
+    def copy_chart(self, source_chart_object, dest_chart_object):
+        if isinstance(dest_chart_object, tuple):
+            source_chart_object.Copy()
+            sheet = self.workbook.Worksheets(dest_chart_object[0])
+            sheet.Paste(sheet.Range(dest_chart_object[1]))
+        else:
+            source_chart_object.Chart.ChartArea.Copy()
+            dest_chart_object.Chart.Paste()
+
+    def cut_chart(self, source_chart_object, dest_chart_object):
+        self.copy_chart(source_chart_object, dest_chart_object)
+        source_chart_object.Delete()
+
+    def hide_column(self, col, sheet_name=None):
+        sheet = self.workbook.Worksheets(sheet_name)
+        sheet.Columns(col).Hidden = True
+
+    def hide_row(self, row, sheet_name=None):
+        sheet = self.workbook.Worksheets(sheet_name)
+        sheet.Rows(row).Hidden = True
+
+    def excel_function(self, range, function, sheet_name=None):
+        sheet = self.workbook.Worksheets(sheet_name)
+        if isinstance(range, tuple):
+            top_row = range[0]
+            left_col = range[1]
+            bottom_row = range[2]
+            right_col = range[3]
+            range_str = '(sheet.Range(sheet.Cells(top_row,left_col),' \
+                        'sheet.Cells(bottom_row,right_col)))'
+        else:
+            range_str = '(sheet.Range(' + '"' + range + '"' + '))'
+        function_str = 'self.excel.WorksheetFunction.'
+        function_str += function + range_str
+        return eval(function_str, globals(), locals())
+
+    def add_comment(self, cell_index, comment='', sheet_name=None):
+        cell = self.convert_cell_index(cell_index, sheet_name)
+        if comment is None:
+            cell.ClearComments()
+        else:
+            cell.AddComment(comment)
+
     def add_picture(self, picture_name, left, top, width, height):
         self.worksheet.Shapes.AddPicture(picture_name, 1, 1, left, top, width,
                                          height)
