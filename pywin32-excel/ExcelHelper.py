@@ -2,7 +2,7 @@
 ****************************************
 * Author: SIRIUS
 * Email: xuqingskywolf@outlook.com
-* Created Time: 2018/11/18 21:40
+* Created Time: 2018/11/23
 ****************************************
 """
 
@@ -302,6 +302,9 @@ class ExcelHelper:
             cell.ClearComments()
         else:
             cell.AddComment(comment)
+
+    def show_warning(self, show=True):
+        self.excel.DisplayAlerts = show
 
     def add_picture(self, picture_name, left, top, width, height):
         self.worksheet.Shapes.AddPicture(picture_name, 1, 1, left, top, width,
