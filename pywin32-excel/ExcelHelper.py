@@ -61,6 +61,9 @@ class ExcelHelper:
     def hide(self):
         self.excel.Visible = False
 
+    def set_worksheet(self, sheet):
+        self.worksheet = self.workbook.Worksheets(sheet)
+
     @staticmethod
     def convert_number_to_alphabet(col_num):
         if col_num > 26:
@@ -80,33 +83,42 @@ class ExcelHelper:
         else:
             return address
 
-    def convert_address_to_cell(self, address):
+    def convert_name_to_sheet(self, sheet_name=None):
+        if sheet_name is None:
+            sheet = self.worksheet
+        else:
+            sheet = self.workbook.Worksheets(sheet_name)
+        return sheet
+
+    def convert_address_to_cell(self, address, sheet_name=None):
+        sheet = self.convert_name_to_sheet(sheet_name)
         row, col = self.convert_address_to_num(address)
-        return self.worksheet.Cells(row, col)
+        return sheet.Cells(row, col)
 
-    def convert_address_to_range(self, address):
+    def convert_address_to_range(self, address, sheet_name=None):
+        sheet = self.convert_name_to_sheet(sheet_name)
         cells = address.split(':')
-        cell1 = self.convert_address_to_cell(cells[0])
-        cell2 = self.convert_address_to_cell(cells[1])
-        return self.worksheet.Range(cell1, cell2)
+        cell1 = self.convert_address_to_cell(cells[0], sheet_name)
+        cell2 = self.convert_address_to_cell(cells[1], sheet_name)
+        return sheet.Range(cell1, cell2)
 
-    def convert_cell_index(self, cell_index):
+    def convert_cell_index(self, cell_index, sheet_name=None):
+        sheet = self.convert_name_to_sheet(sheet_name)
         if isinstance(cell_index, tuple):
-            return self.worksheet.Cells(cell_index)
+            return sheet.Cells(cell_index)
         else:
-            return self.convert_address_to_cell(cell_index)
+            return self.convert_address_to_cell(cell_index, sheet_name)
 
-    def convert_range_index(self, range_index):
+    def convert_range_index(self, range_index, sheet_name=None):
+        sheet = self.convert_name_to_sheet(sheet_name)
         if isinstance(range_index, tuple):
-            cell1 = self.worksheet.Cells(range_index[0], range_index[1])
-            cell2 = self.worksheet.Cells(range_index[2], range_index[3])
-            return self.worksheet.Range(cell1, cell2)
+            cell1 = sheet.Cells(range_index[0], range_index[1])
+            cell2 = sheet.Cells(range_index[2], range_index[3])
+            return sheet.Range(cell1, cell2)
         else:
-            return self.convert_address_to_range(range_index)
+            return self.convert_address_to_range(range_index, sheet_name)
 
-    def set_worksheet(self, sheet):
-        self.worksheet = self.workbook.Worksheets(sheet)
-
+    # cell methods
     def get_cell(self, cell_index):
         """
         Get value of one cell
@@ -146,6 +158,7 @@ class ExcelHelper:
                 cell.Font.FontStyle = 'Regular'
         cell.Font.Name = name
 
+    # range methods
     def get_range(self, range_index):
         """
         Get value of a range of cells
@@ -176,28 +189,31 @@ class ExcelHelper:
         self.convert_range_index(range_index).Delete()
 
     def copy_and_paste(self, source, destination):
-        source_sheet = self.workbook.Worksheets(source[0])
-        destination_sheet = self.workbook.Worksheets(destination[0])
-        temp_sheet = self.worksheet.Name
-        self.worksheet = destination_sheet
-        destination_range = self.convert_range_index(destination[1])
-        self.worksheet = source_sheet
-        self.convert_range_index(source[1]).Copy(destination_range)
-        self.set_worksheet(temp_sheet)
+        source_sheet_name = source[0]
+        source_range_index = source[1]
+        dest_sheet_name = destination[0]
+        dest_range_index = destination[1]
+        dest_range = self.convert_range_index(dest_range_index,
+                                              dest_sheet_name)
+        source_range = self.convert_range_index(source_range_index,
+                                                source_sheet_name)
+        source_range.Copy(dest_range)
 
+    # sheet methods
     def add_sheet(self, old_sheet, new_sheet, after=True):
-        sheet = self.workbook.Worksheets(old_sheet)
+        sheet = self.convert_name_to_sheet(old_sheet)
         if after:
             self.workbook.Worksheets.Add(None, sheet).Name = new_sheet
         else:
             self.workbook.Worksheets.Add(sheet).Name = new_sheet
 
-    def del_sheet(self, sheet):
+    def del_sheet(self, sheet_name):
         self.excel.DisplayAlerts = False
-        worksheet = self.workbook.Worksheets(sheet)
-        worksheet.Activate()
+        sheet = self.convert_name_to_sheet(sheet_name)
+        sheet.Activate()
         self.excel.ActivateSheet.Delete()
 
+    #
     def add_picture(self, picture_name, left, top, width, height):
         self.worksheet.Shapes.AddPicture(picture_name, 1, 1, left, top, width,
                                          height)
