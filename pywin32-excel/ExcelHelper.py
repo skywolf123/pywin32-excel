@@ -119,31 +119,33 @@ class ExcelHelper:
             return self.convert_address_to_range(range_index, sheet_name)
 
     # cell methods
-    def get_cell(self, cell_index):
+    def get_cell(self, cell_index, sheet_name=None):
         """
         Get value of one cell
+        :param sheet_name:
         :param cell_index: tuple (row, column) or string 'ColumnRow'
         e.g. (1, 2) or 'A2'
         :return:
         """
-        return self.convert_cell_index(cell_index).Value
+        return self.convert_cell_index(cell_index, sheet_name).Value
 
-    def get_cell_text(self, cell_index):
-        return self.worksheet.Cells(cell_index).Text
+    def get_cell_text(self, cell_index, sheet_name=None):
+        return self.worksheet.Cells(cell_index, sheet_name).Text
 
-    def set_cell(self, cell_index, value):
+    def set_cell(self, cell_index, value, sheet_name=None):
         """
         Set value of one cell
+        :param sheet_name:
         :param cell_index: tuple (row, column) or string 'ColRow'
         e.g. (1, 2) or 'A2'
         :param value:
         :return:
         """
-        self.convert_cell_index(cell_index).Value = value
+        self.convert_cell_index(cell_index, sheet_name).Value = value
 
-    def set_cell_font(self, cell_index,
-                      style='Regular', name='Arial', size=9, color_index=1):
-        cell = self.convert_cell_index(cell_index).Value
+    def set_cell_font(self, cell_index, style='Regular', name='Arial',
+                      size=9, color_index=1, sheet_name=None):
+        cell = self.convert_cell_index(cell_index, sheet_name).Value
 
         cell.Font.Size = size
         cell.ColorIndex = color_index
@@ -159,17 +161,18 @@ class ExcelHelper:
         cell.Font.Name = name
 
     # range methods
-    def get_range(self, range_index):
+    def get_range(self, range_index, sheet_name=None):
         """
         Get value of a range of cells
+        :param sheet_name:
         :param range_index: tuple (row1,col1,row2,col2) or string
         'ColRow1:ColRow2'
         e.g. (1,2,10,12) or 'A1:C3'
         :return:
         """
-        return self.convert_range_index(range_index).Value
+        return self.convert_range_index(range_index, sheet_name).Value
 
-    def set_range(self, top_cell_index, data):
+    def set_range(self, top_cell_index, data, sheet_name=None):
         if isinstance(top_cell_index, tuple):
             row1 = top_cell_index[0]
             col1 = top_cell_index[1]
@@ -177,16 +180,18 @@ class ExcelHelper:
             row1, col1 = self.convert_address_to_num(top_cell_index)
         row2 = row1 + len(data) - 1
         col2 = col1 + len(data[0]) - 1
-        self.convert_range_index((row1, col1, row2, col2)).Value = data
+        range = self.convert_range_index((row1, col1, row2, col2), sheet_name)
+        range.Value = data
 
-    def clear_range(self, range_index, clear_contents=True, clear_formats=True):
+    def clear_range(self, range_index, clear_contents=True,
+                    clear_formats=True, sheet_name=None):
         if clear_contents:
-            self.convert_range_index(range_index).ClearContents()
+            self.convert_range_index(range_index, sheet_name).ClearContents()
         if clear_formats:
-            self.convert_range_index(range_index).ClearFormats()
+            self.convert_range_index(range_index, sheet_name).ClearFormats()
 
-    def del_range(self, range_index):
-        self.convert_range_index(range_index).Delete()
+    def del_range(self, range_index, sheet_name=None):
+        self.convert_range_index(range_index, sheet_name).Delete()
 
     def copy_and_paste(self, source, destination):
         source_sheet_name = source[0]
@@ -198,6 +203,31 @@ class ExcelHelper:
         source_range = self.convert_range_index(source_range_index,
                                                 source_sheet_name)
         source_range.Copy(dest_range)
+
+    def set_range_align(self, range_index, alignment='center',
+                        sheet_name=None):
+        alignment_dict = {'left': 2,
+                          'center': 3,
+                          'right': 4}
+        range = self.convert_range_index(range_index, sheet_name)
+        range.HorizontalAlignment = alignment_dict[alignment.lower()]
+
+    def set_range_font(self, range_index, style='Regular', name='Arial',
+                       size=9, color_index=1, sheet_name=None):
+        range = self.convert_cell_index(range_index, sheet_name).Value
+
+        range.Font.Size = size
+        range.ColorIndex = color_index
+        for i, item in enumerate(style):
+            if item.lower() == 'bold':
+                range.Font.Bold = True
+            elif item.lower() == 'italic':
+                range.Font.Italic = True
+            elif item.lower() == 'underline':
+                range.Font.Underline = True
+            elif item.lower() == 'regular':
+                range.Font.FontStyle = 'Regular'
+        range.Font.Name = name
 
     # sheet methods
     def add_sheet(self, new_sheet, old_sheet=None, after=True):
@@ -303,8 +333,8 @@ class ExcelHelper:
         else:
             cell.AddComment(comment)
 
-    def show_warning(self, show=True):
-        self.excel.DisplayAlerts = show
+    def show_warning(self, enable=True):
+        self.excel.DisplayAlerts = enable
 
     def add_picture(self, picture_name, left, top, width, height):
         self.worksheet.Shapes.AddPicture(picture_name, 1, 1, left, top, width,
