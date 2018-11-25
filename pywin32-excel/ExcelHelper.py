@@ -90,7 +90,7 @@ class ExcelHelper:
         if sheet_name is None:
             sheet = self.worksheet
         else:
-            sheet = self.workbook.Worksheets(sheet_name)
+            sheet = self.convert_name_to_sheet(sheet_name)
         return sheet
 
     def convert_address_to_cell(self, address, sheet_name=None):
@@ -196,6 +196,22 @@ class ExcelHelper:
 
     def del_range(self, range_index, sheet_name=None):
         self.convert_range_index(range_index, sheet_name).Delete()
+
+    def highlight(self, range_index, color_index=36, sheet_name=None):
+        range_object = self.convert_range_index(range_index, sheet_name)
+        range_object.Interior.ColorIndex = color_index
+
+    def wrap_text(self, range_index, enable=True, sheet_name=None):
+        range_object = self.convert_range_index(range_index, sheet_name)
+        range_object.WrapText = str(enable)
+
+    def set_style(self, range_index, style, sheet_name=None):
+        range_object = self.convert_range_index(range_index, sheet_name)
+        range_object.Style = style
+
+    def merge_cells(self, range_index, enable=True, sheet_name=None):
+        range_object = self.convert_range_index(range_index, sheet_name)
+        range_object.MergeCells = str(enable)
 
     def copy_and_paste(self, source, destination):
         source_sheet_name = source[0]
@@ -307,16 +323,28 @@ class ExcelHelper:
         self.copy_chart(source_chart_object, dest_chart_object)
         source_chart_object.Delete()
 
-    def hide_column(self, col, sheet_name=None):
-        sheet = self.workbook.Worksheets(sheet_name)
+    def hide_col(self, col, sheet_name=None):
+        sheet = self.convert_name_to_sheet(sheet_name)
         sheet.Columns(col).Hidden = True
 
     def hide_row(self, row, sheet_name=None):
-        sheet = self.workbook.Worksheets(sheet_name)
+        sheet = self.convert_name_to_sheet(sheet_name)
         sheet.Rows(row).Hidden = True
 
+    def del_col(self, top_col, bottom_col, sheet_name=None):
+        sheet = self.convert_name_to_sheet(sheet_name)
+        top_cell = sheet.Cells(1, top_col)
+        bottom_cell = sheet.Cells(1, bottom_col)
+        sheet.Range(top_cell, bottom_cell).EntireColumn.Delete()
+
+    def del_row(self, top_row, bottom_row, sheet_name):
+        sheet = self.convert_name_to_sheet(sheet_name)
+        top_cell = sheet.Cells(top_row, 1)
+        bottom_cell = sheet.Cells(bottom_row, 1)
+        sheet.Range(top_cell, bottom_cell).EntireRow.Delete()
+
     def excel_function(self, range_index, func, sheet_name=None):
-        sheet = self.workbook.Worksheets(sheet_name)
+        sheet = self.convert_name_to_sheet(sheet_name)
         if isinstance(range_index, tuple):
             top_row = range_index[0]
             left_col = range_index[1]
@@ -341,9 +369,9 @@ class ExcelHelper:
         return self.convert_name_to_sheet(sheet_name).Usedrange.Rows.Count
 
     def get_name_of_sheets(self):
-        num_of_sheets=self.workbook.Worksheets.Count
-        name_of_sheets=[]
-        for n in range(1, int(num_of_sheets)+1,1):
+        num_of_sheets = self.workbook.Worksheets.Count
+        name_of_sheets = []
+        for n in range(1, int(num_of_sheets) + 1, 1):
             name_of_sheets.append(self.workbook.Worksheets.Items(n).Name)
         return name_of_sheets
 
