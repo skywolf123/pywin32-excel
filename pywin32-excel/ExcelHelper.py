@@ -68,21 +68,28 @@ class ExcelHelper:
         self.worksheet = self.workbook.Worksheets(sheet)
 
     @staticmethod
-    def convert_number_to_alphabet(col_num):
+    def convert_num_to_alphabet(col_num):
         if col_num > 26:
             return chr(int(col_num / 26 + 64)) + chr(int(col_num % 26 + 64))
         else:
             return chr(col_num + 64)
 
     @staticmethod
+    def convert_alphabet_to_num(col):
+        col_num = 0
+        for c in col:
+            col_num = col_num * 26 + ord(c) - 64
+        return col_num
+
+    @staticmethod
     def convert_address_to_num(address):
         if isinstance(address, str):
             row = re.sub('^\D+', '', address)
             col = re.sub('\d+$', '', address)
-            col_index = 0
+            col_num = 0
             for c in col:
-                col_index = col_index * 26 + ord(c) - 64
-            return row, col_index
+                col_num = col_num * 26 + ord(c) - 64
+            return row, col_num
         else:
             return address
 
@@ -337,11 +344,23 @@ class ExcelHelper:
         bottom_cell = sheet.Cells(1, bottom_col)
         sheet.Range(top_cell, bottom_cell).EntireColumn.Delete()
 
-    def del_row(self, top_row, bottom_row, sheet_name):
+    def del_row(self, top_row, bottom_row, sheet_name=None):
         sheet = self.convert_name_to_sheet(sheet_name)
         top_cell = sheet.Cells(top_row, 1)
         bottom_cell = sheet.Cells(bottom_row, 1)
         sheet.Range(top_cell, bottom_cell).EntireRow.Delete()
+
+    def add_col(self, col, sheet_name=None):
+        sheet = self.convert_name_to_sheet(sheet_name)
+        if isinstance(col, str):
+            col = self.convert_alphabet_to_num(col)
+        temp_string = str(col) + ':' + str(col)
+        sheet.Range(temp_string).Insert(Shift=1)
+
+    def add_row(self, row, sheet_name=None):
+        sheet = self.convert_name_to_sheet(sheet_name)
+        temp_string = str(row) + ':' + str(row)
+        sheet.Range(temp_string).Insert(Shift=1)
 
     def excel_function(self, range_index, func, sheet_name=None):
         sheet = self.convert_name_to_sheet(sheet_name)
