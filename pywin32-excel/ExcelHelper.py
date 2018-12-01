@@ -140,7 +140,7 @@ class ExcelHelper:
         return self.convert_cell_index(cell_index, sheet_name).Value
 
     def get_cell_text(self, cell_index, sheet_name=None):
-        return self.worksheet.Cells(cell_index, sheet_name).Text
+        return self.convert_cell_index(cell_index, sheet_name).Text
 
     def set_cell(self, cell_index, value, sheet_name=None):
         """
