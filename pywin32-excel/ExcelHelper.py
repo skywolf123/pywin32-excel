@@ -134,7 +134,7 @@ class ExcelHelper:
         Get value of one cell
         :param sheet_name:
         :param cell_index: tuple (row, column) or string 'ColumnRow'
-        e.g. (1, 2) or 'A2'
+        e.g. (2, 1) or 'A2'
         :return:
         """
         return self.convert_cell_index(cell_index, sheet_name).Value
@@ -147,7 +147,7 @@ class ExcelHelper:
         Set value of one cell
         :param sheet_name:
         :param cell_index: tuple (row, column) or string 'ColRow'
-        e.g. (1, 2) or 'A2'
+        e.g. (2, 1) or 'A2'
         :param value:
         :return:
         """
@@ -177,7 +177,7 @@ class ExcelHelper:
         :param sheet_name:
         :param range_index: tuple (row1,col1,row2,col2) or string
         'ColRow1:ColRow2'
-        e.g. (1,2,10,12) or 'A1:C3'
+        e.g. (2,1,4,3) or 'A2:C4'
         :return:
         """
         return self.convert_range_index(range_index, sheet_name).Value
