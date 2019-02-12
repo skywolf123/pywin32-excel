@@ -115,7 +115,7 @@ class ExcelHelper:
     def convert_cell_index(self, cell_index, sheet_name=None):
         sheet = self.convert_name_to_sheet(sheet_name)
         if isinstance(cell_index, tuple):
-            return sheet.Cells(cell_index)
+            return sheet.Cells(cell_index[0], cell_index[1])
         else:
             return self.convert_address_to_cell(cell_index, sheet_name)
 
